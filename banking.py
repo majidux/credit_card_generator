@@ -11,15 +11,10 @@ def create_bin_number():
     return randint(1000, 9999)
 
 
-def create_check_sum():
-    return randint(0, 9)
-
-
 def luhn_algorithm(entry_number):
     separated_number = list(entry_number)
     new_list = []
     final_new_list = []
-    print(entry_number)
     for index, item in enumerate(separated_number):
         if (index + 1) % 2 == 0:
             item = item
@@ -86,12 +81,9 @@ def handle_func():
         print("Enter your PIN:")
         pin_number_input = int(input())
         print(f"type {card_number}")
-        # print(int(card_number) != card_number_input)
         if int(pin_number) != pin_number_input or int(card_number) != card_number_input:
             print("Wrong card number or PIN!")
             handle_func()
-            # again = int(input())
-            # handle_func_entered(again)
         else:
             print("You have successfully logged in!")
             again = int(input())
