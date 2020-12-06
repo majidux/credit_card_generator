@@ -1,6 +1,53 @@
 # Write your code here
 from random import randint
 import functools
+import sqlite3
+from sqlite3 import Error
+
+
+
+conn = sqlite3.connect("card.s3db")
+cur = conn.cursor()
+cur.execute('DROP TABLE IF EXISTS card')
+conn.commit()
+
+
+def open_connection():
+    conn = sqlite3.connect("card.s3db")
+    return conn
+
+
+def write_query(query):
+    conn = open_connection()
+    cur = conn.cursor()
+    cur.execute(query)
+    conn.commit()
+
+
+
+def create_table():
+    conn = open_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            f'CREATE TABLE IF NOT EXISTS card ( id INTEGER PRIMARY KEY AUTOINCREMENT DEFAULT 0, number TEXT, pin TEXT, balance INTEGER DEFAULT 0)')
+        conn.commit()
+    except Error as e:
+        print(e)
+    finally:
+        if conn:
+            conn.close()
+
+
+create_table()
+
+
+def fetch_one(query):
+    conn = open_connection()
+    cur = conn.cursor()
+    cur.execute(query)
+    conn.commit()
+    return cur.fetchone()
 
 
 def create_account_identifier():
@@ -66,6 +113,10 @@ def handle_func():
         carder = card.items
         card_number = carder.get('card_number')
         pin_number = carder.get('pin_number')
+        conn = sqlite3.connect("card.s3db")
+        cur = conn.cursor()
+        cur.execute(f'INSERT INTO card (number, pin) VALUES ({card_number}, {pin_number} )')
+        conn.commit()
         print("Your card has been created")
         print("Your card number:")
         print(card_number)
@@ -80,7 +131,6 @@ def handle_func():
         card_number_input = int(input())
         print("Enter your PIN:")
         pin_number_input = int(input())
-        print(f"type {card_number}")
         if int(pin_number) != pin_number_input or int(card_number) != card_number_input:
             print("Wrong card number or PIN!")
             handle_func()
@@ -94,10 +144,18 @@ def handle_func():
 
 def handle_func_entered(entry_arg):
     if entry_arg == 1:
-        print(0)
+        print(fetch_one('SELECT income FROM card'))
         balance = int(input())
         handle_func_entered(balance)
     elif entry_arg == 2:
+        income_entry = input()
+        write_query('ALTER TABLE card ADD income INTEGER')
+        write_query(f'UPDATE card SET income = {int(income_entry)} WHERE id = 1')
+        again = int(input())
+        handle_func_entered(again)
+    elif entry_arg == 3:
+        do_transfer()
+    elif entry_arg == 5:
         print("You have successfully logged out!")
         return
     else:
@@ -105,3 +163,8 @@ def handle_func_entered(entry_arg):
 
 
 handle_func()
+
+
+def do_transfer():
+    print('do_transfer')
+    # write_query(f'ALTER TABLE card ADD income INTEGER')
