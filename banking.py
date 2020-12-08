@@ -4,8 +4,6 @@ import functools
 import sqlite3
 from sqlite3 import Error
 
-
-
 conn = sqlite3.connect("card.s3db")
 cur = conn.cursor()
 cur.execute('DROP TABLE IF EXISTS card')
@@ -16,12 +14,16 @@ def open_connection():
     return sqlite3.connect("card.s3db")
 
 
+def handle_enumerate(arg, e):
+    for index, item in enumerate(arg):
+        return arg[index]
+
+
 def write_query(query):
     conn = open_connection()
     cur = conn.cursor()
     cur.execute(query)
     conn.commit()
-
 
 
 def create_table():
@@ -113,7 +115,7 @@ def handle_func():
         pin_number = carder.get('pin_number')
         conn = sqlite3.connect("card.s3db")
         cur = conn.cursor()
-        cur.execute(f'INSERT INTO card (number, pin) VALUES ({card_number}, {pin_number} )')
+        cur.execute(f'INSERT INTO card (number, pin) VALUES ({card_number}, {pin_number})')
         conn.commit()
         print("Your card has been created")
         print("Your card number:")
@@ -122,41 +124,44 @@ def handle_func():
         print(pin_number)
         handle_func()
     elif entry_number == 2:
-        carder = card.items
-        card_number = carder.get('card_number')
-        pin_number = carder.get('pin_number')
         print("Enter your card number:")
         card_number_input = int(input())
         print("Enter your PIN:")
         pin_number_input = int(input())
-        if int(pin_number) != pin_number_input or int(card_number) != card_number_input:
+        card_number = fetch_one(f'SELECT number FROM card WHERE number = {int(card_number_input)}')
+        pin_number = fetch_one(f'SELECT pin FROM card WHERE pin = {int(pin_number_input)}')
+        print(f"pin_number {handle_enumerate(pin_number, pin_number_input)}")
+        print(f"card_number {handle_enumerate(card_number, card_number_input)}")
+        if int(handle_enumerate(pin_number, pin_number_input)) != pin_number_input \
+                or \
+                int(handle_enumerate(card_number, card_number_input)) != card_number_input:
             print("Wrong card number or PIN!")
             handle_func()
         else:
             print("You have successfully logged in!")
             again = int(input())
-            handle_func_entered(again)
+            handle_func_entered(again, card_number)
     else:
         print('Bye!')
 
 
-def handle_func_entered(entry_arg):
+def handle_func_entered(entry_arg, card_number_arg=''):
+    balance_query = fetch_one('SELECT balance FROM card')
+    item_enumerate = handle_enumerate(balance_query)
     if entry_arg == 1:
-        balance_query = fetch_one('SELECT income FROM card')
-        for index, item in enumerate(balance_query):
-            print(f"Balance: {int(item)}")
-        balance = int(input())
-        handle_func_entered(balance)
+        print(f"Balance: {int(item_enumerate)}")
+        handle_func_entered(int(input()))
     elif entry_arg == 2:
         print('Enter income:')
         income_entry = input()
-        write_query('ALTER TABLE card ADD income INTEGER')
-        write_query(f'UPDATE card SET income = {int(income_entry)} WHERE id = 1')
+        sum_balance = int(income_entry) + int(item_enumerate)
+        write_query(f'UPDATE card SET balance = {int(sum_balance)} WHERE number = {card_number_arg}')
         print("Income was added!")
-        again = int(input())
-        handle_func_entered(again)
+        handle_func_entered(int(input()))
     elif entry_arg == 3:
-        do_transfer()
+        do_transfer(card_number_arg)
+    elif entry_arg == 4:
+        close_account(card_number_arg)
     elif entry_arg == 5:
         print("You have successfully logged out!")
         return
@@ -164,9 +169,16 @@ def handle_func_entered(entry_arg):
         print('Bye!')
 
 
-handle_func()
-
-
-def do_transfer():
+def do_transfer(arg):
+    # enter_
+    # if
     print('do_transfer')
-    # write_query(f'ALTER TABLE card ADD income INTEGER')
+
+
+def close_account(arg):
+    query = f"DELETE FROM card WHERE number = {handle_enumerate(arg)}"
+    write_query(query)
+    print(query)
+
+
+handle_func()
